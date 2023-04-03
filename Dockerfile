@@ -1,4 +1,4 @@
-FROM telegraf:1.16.2 as builder
+FROM telegraf:1.26.0 as builder
 
 ARG OBJECT_SUFFIX=''
 
