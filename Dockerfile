@@ -10,7 +10,7 @@ FROM alpine
 
 COPY --from=builder /build/modem-stats /modem-stats
 
-ENTRYPOINT /modem-stats
+ENTRYPOINT ["/modem-stats"]
 
 # ARG OBJECT_SUFFIX=''
 
