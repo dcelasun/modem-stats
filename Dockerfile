@@ -8,7 +8,7 @@ RUN go build -o modem-stats
 
 FROM alpine
 
-COPY --from=builder modem-stats /modem-stats
+COPY --from=builder /build/modem-stats /modem-stats
 
 ENTRYPOINT /modem-stats
 
