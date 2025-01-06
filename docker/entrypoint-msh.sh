@@ -31,6 +31,10 @@ cat /etc/template/telegraf.conf |\
     sed "s/_PING_TARGETS/${PING_TARGETS}/" >\
     /etc/telegraf.d/telegraf.conf
 
+export FETCH_INTERVAL
+export INFLUX_URL
+export INFLUX_DB
+
 exec telegraf \
     --config "/etc/telegraf.d/telegraf.conf" \
     --config-directory "/etc/telegraf.d/"
