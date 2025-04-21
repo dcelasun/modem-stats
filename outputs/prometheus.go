@@ -8,6 +8,7 @@ import (
 
 	"github.com/msh100/modem-stats/utils"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/collectors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
@@ -280,7 +281,7 @@ func ProExporter(docsisModem utils.DocsisModem) *PrometheusExporter {
 }
 
 func Prometheus(modem utils.DocsisModem, port int) {
-	prometheus.Unregister(prometheus.NewGoCollector())
+	prometheus.Unregister(collectors.NewGoCollector())
 	exporter := ProExporter(modem)
 	prometheus.MustRegister(exporter)
 

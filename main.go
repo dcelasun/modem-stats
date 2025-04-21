@@ -3,12 +3,12 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"os"
 	"time"
 
-	flags "github.com/jessevdk/go-flags"
+	"github.com/jessevdk/go-flags"
 	"github.com/msh100/modem-stats/modems/comhemc2"
 	"github.com/msh100/modem-stats/modems/superhub3"
 	"github.com/msh100/modem-stats/modems/superhub4"
@@ -32,7 +32,6 @@ func main() {
 	_, err := flags.ParseArgs(&commandLineOpts, os.Args)
 	if err != nil {
 		log.Fatal("error parsing command line arguments")
-		os.Exit(1)
 	}
 
 	var body []byte
@@ -40,7 +39,7 @@ func main() {
 	if localFile := utils.Getenv("LOCAL_FILE", ""); localFile != "" {
 		timeStart := time.Now().UnixNano() / int64(time.Millisecond)
 		file, _ := os.Open(localFile)
-		body, _ = ioutil.ReadAll(file)
+		body, _ = io.ReadAll(file)
 		fetchTime = (time.Now().UnixNano() / int64(time.Millisecond)) - timeStart
 	}
 
