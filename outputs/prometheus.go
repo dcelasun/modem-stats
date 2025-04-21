@@ -285,6 +285,10 @@ func Prometheus(modem utils.DocsisModem, port int) {
 	exporter := ProExporter(modem)
 	prometheus.MustRegister(exporter)
 
+	okHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(http.StatusOK) })
+	http.Handle("/readyz", okHandler)
+	http.Handle("/livez", okHandler)
+
 	http.Handle("/metrics", promhttp.Handler())
 	fmt.Println(fmt.Sprintf("Starting Prometheus exporter on port %d", port))
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", port), nil))
