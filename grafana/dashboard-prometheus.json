@@ -377,7 +377,7 @@
           "editorMode": "code",
           "expr": "modemstats_downstream_power{service=~\"$service\"}/10",
           "instant": false,
-          "legendFormat": "Channel {{id}}",
+          "legendFormat": "Channel {{channel}}",
           "range": true,
           "refId": "A",
           "datasource": {
@@ -479,7 +479,7 @@
           "editorMode": "code",
           "expr": "modemstats_upstream_power{service=~\"$service\"}/10",
           "instant": false,
-          "legendFormat": "Channel {{id}}",
+          "legendFormat": "Channel {{channel}}",
           "range": true,
           "refId": "A",
           "datasource": {
@@ -581,7 +581,7 @@
           "editorMode": "code",
           "expr": "modemstats_downstream_snr{service=~\"$service\"}/10",
           "instant": false,
-          "legendFormat": "Channel {{id}}",
+          "legendFormat": "Channel {{channel}}",
           "range": true,
           "refId": "A",
           "datasource": {
@@ -684,7 +684,7 @@
           "expr": "rate(modemstats_downstream_prerserr{service=~\"$service\"}[$__rate_interval])",
           "instant": false,
           "interval": "",
-          "legendFormat": "Channel {{id}}",
+          "legendFormat": "Channel {{channel}}",
           "range": true,
           "refId": "A",
           "datasource": {
@@ -787,7 +787,7 @@
           "expr": "rate(modemstats_downstream_postrserr{service=~\"$service\"}[$__rate_interval])",
           "instant": false,
           "interval": "",
-          "legendFormat": "Channel {{id}}",
+          "legendFormat": "Channel {{channel}}",
           "range": true,
           "refId": "A",
           "datasource": {
