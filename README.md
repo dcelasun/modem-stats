@@ -21,6 +21,8 @@ hardware (such as a Raspberry Pi Zero) with no issues.
  * [Configuration](#Configuration)
    * [Example Usage](#Example-Usage)
  * [Grafana](#Grafana)
+    * [With Prometheus](#with-prometheus)
+    * [With Telegraf](#with-telegraf)
 
 
 ## Usage
