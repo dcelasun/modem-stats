@@ -8,7 +8,7 @@ A Prometheus endpoint can also be exposed for collection.
 This package has been written in Go in an attempt to allow it to run on low end
 hardware (such as a Raspberry Pi Zero) with no issues.
 
-![Grafana dashboard screenshot](https://user-images.githubusercontent.com/4477262/114266746-cd910980-99ef-11eb-8a5e-f4f719897719.JPG)
+![Grafana dashboard screenshot](https://github.com/user-attachments/assets/53ea51c6-1972-452a-9578-7978b4fc0f3c)
 
 
  * [Usage](#Usage)
