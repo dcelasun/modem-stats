@@ -202,5 +202,10 @@ downstream,channel=9,id=16,modulation=QAM256,scheme=SC-QAM frequency=259000000,s
 
 ## Grafana
 
+## With Prometheus
+You can add [the Modem Stats dashboard](https://grafana.com/grafana/dashboards/23305)
+to your Grafana instance by adding dashboard ID `23305`.
+
+## With Telegraf
 You can add [the Router Stats dashboard](https://grafana.com/grafana/dashboards/14209)
 to your Grafana instance by adding dashboard ID `14209`.
