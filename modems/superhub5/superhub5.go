@@ -1,6 +1,7 @@
 package superhub5
 
 import (
+	_ "embed"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -11,7 +12,21 @@ import (
 	"github.com/msh100/modem-stats/utils"
 )
 
+var (
+	// As of firmware LG-RDK_11.6.2-2410.1 (~ September 2025) the Hub 5 uses a self-signed certificate
+	// which expires on 23 December 2124 so it should be safe to pin.
+	//
+	// Command to extract the certificate:
+	// openssl s_client -showcerts -connect 192.168.100.1:443 </dev/null 2>/dev/null|openssl x509 -outform PEM >superhub5.pem
+
+	//go:embed superhub5.pem
+	tlsCertificateBytes []byte
+)
+
+const defaultIPAddress = "192.168.100.1"
+
 type Modem struct {
+	Protocol  string
 	IPAddress string
 	Stats     []byte
 	FetchTime int64
@@ -27,9 +42,20 @@ func (sh5 *Modem) Type() string {
 
 func (sh5 *Modem) apiAddress() string {
 	if sh5.IPAddress == "" {
-		sh5.IPAddress = "192.168.100.1" // TODO: Is this a reasonable default?
+		sh5.IPAddress = defaultIPAddress // TODO: Is this a reasonable default?
 	}
-	return fmt.Sprintf("http://%s/rest/v1/cablemodem", sh5.IPAddress)
+
+	// Only check once
+	if sh5.Protocol == "" {
+		sh5.Protocol = "http"
+		// Since firmware LG-RDK_11.6.2-2410.1, all HTTP requests to *any* endpoint are redirected to https://192.168.100.1/rest/front.jse
+		// Unfortunately, that means we have to manually check if HTTPS is available on the Hub and use the correct API address if so.
+		if utils.IsPortReachable(sh5.IPAddress, 443) {
+			sh5.Protocol = "https"
+		}
+	}
+
+	return fmt.Sprintf("%s://%s/rest/v1/cablemodem", sh5.Protocol, sh5.IPAddress)
 }
 
 type dsChannel struct {
@@ -81,7 +107,14 @@ func (sh5 *Modem) ParseStats() (utils.ModemStats, error) {
 		}
 
 		timeStart := time.Now().UnixNano() / int64(time.Millisecond)
-		statsData := utils.BoundedParallelGet(queries, 3)
+
+		var statsData []utils.HttpResult
+		if sh5.Protocol == "https" {
+			statsData = utils.BoundedParallelGet(queries, 3, tlsCertificateBytes)
+		} else {
+			statsData = utils.BoundedParallelGet(queries, 3)
+		}
+
 		sh5.FetchTime = (time.Now().UnixNano() / int64(time.Millisecond)) - timeStart
 
 		for _, query := range statsData {

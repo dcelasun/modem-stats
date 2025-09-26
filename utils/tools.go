@@ -2,9 +2,12 @@ package utils
 
 import (
 	"crypto/md5"
+	"crypto/tls"
+	"crypto/x509"
 	"fmt"
 	"io/ioutil"
 	"math/rand"
+	"net"
 	"net/http"
 	"os"
 	"strconv"
@@ -80,7 +83,7 @@ type HttpResult struct {
 	Err   error
 }
 
-func BoundedParallelGet(urls []string, concurrencyLimit int) []HttpResult {
+func BoundedParallelGet(urls []string, concurrencyLimit int, trustedCertificatesPEM ...[]byte) []HttpResult {
 	semaphoreChan := make(chan struct{}, concurrencyLimit)
 	resultsChan := make(chan *HttpResult)
 
@@ -89,10 +92,22 @@ func BoundedParallelGet(urls []string, concurrencyLimit int) []HttpResult {
 		close(resultsChan)
 	}()
 
+	httpClient := http.DefaultClient
+	if len(trustedCertificatesPEM) > 0 {
+		var err error
+		httpClient, err = GetHTTPClientWithCertificates(trustedCertificatesPEM...)
+		if err != nil {
+			panic(err)
+		}
+	}
+
 	for i, url := range urls {
 		go func(i int, url string) {
 			semaphoreChan <- struct{}{}
-			res, err := http.Get(url)
+			res, err := httpClient.Get(url)
+			if err != nil {
+				panic(err)
+			}
 			result := &HttpResult{i, *res, err}
 			resultsChan <- result
 			<-semaphoreChan
@@ -131,4 +146,61 @@ func ExtractFloatValue(valueWithUnit string) float64 {
 		}
 	}
 	return 0.0
+}
+
+func IsPortReachable(ip string, port int) bool {
+	conn, err := net.DialTimeout("tcp", fmt.Sprintf("%s:%d", ip, port), 5*time.Second)
+	if err != nil {
+		return false
+	}
+	conn.Close()
+	return true
+}
+
+func GetHTTPClientWithCertificates(trustedCertificatesPEM ...[]byte) (*http.Client, error) {
+	rootCAs, err := x509.SystemCertPool()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get system cert pool: %v", err)
+	}
+	if rootCAs == nil {
+		rootCAs = x509.NewCertPool()
+	}
+
+	for _, certPEM := range trustedCertificatesPEM {
+		if !rootCAs.AppendCertsFromPEM(certPEM) {
+			return nil, fmt.Errorf("failed to append custom certificate")
+		}
+	}
+
+	tlsConfig := &tls.Config{
+		RootCAs:            rootCAs,
+		InsecureSkipVerify: true, // Required when using VerifyPeerCertificate
+		VerifyPeerCertificate: func(rawCerts [][]byte, verifiedChains [][]*x509.Certificate) error {
+			if len(rawCerts) == 0 {
+				return fmt.Errorf("no certificates provided")
+			}
+
+			cert, err := x509.ParseCertificate(rawCerts[0])
+			if err != nil {
+				return fmt.Errorf("failed to parse certificate: %v", err)
+			}
+
+			opts := x509.VerifyOptions{
+				Roots: rootCAs,
+			}
+
+			_, err = cert.Verify(opts)
+			if err != nil {
+				return fmt.Errorf("certificate verification failed: %v", err)
+			}
+
+			return nil
+		},
+	}
+
+	return &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: tlsConfig,
+		},
+	}, nil
 }
