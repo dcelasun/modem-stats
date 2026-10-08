@@ -27,13 +27,20 @@ type PrometheusExporter struct {
 	downAttenuation *prometheus.Desc
 	upNoise         *prometheus.Desc
 	upAttenuation   *prometheus.Desc
+	up              *prometheus.Desc
 
 	docsisModem utils.DocsisModem
 }
 
 func (p *PrometheusExporter) Collect(ch chan<- prometheus.Metric) {
 	utils.ResetStats(p.docsisModem)
-	modemStats, _ := utils.FetchStats(p.docsisModem)
+	modemStats, err := utils.FetchStats(p.docsisModem)
+	if err != nil {
+		log.Printf("Error fetching stats from modem: %v", err)
+		ch <- prometheus.MustNewConstMetric(p.up, prometheus.GaugeValue, 0)
+		return
+	}
+	ch <- prometheus.MustNewConstMetric(p.up, prometheus.GaugeValue, 1)
 
 	for _, c := range modemStats.DownChannels {
 		var labels []string
@@ -176,6 +183,7 @@ func (p *PrometheusExporter) Describe(ch chan<- *prometheus.Desc) {
 	ch <- p.downAttenuation
 	ch <- p.upNoise
 	ch <- p.upAttenuation
+	ch <- p.up
 }
 
 func ProExporter(docsisModem utils.DocsisModem) *PrometheusExporter {
@@ -269,6 +277,12 @@ func ProExporter(docsisModem utils.DocsisModem) *PrometheusExporter {
 			prometheus.BuildFQName(namespace, "config", "maxburst"),
 			"Maximum link burst rate",
 			[]string{"config"},
+			nil,
+		),
+		up: prometheus.NewDesc(
+			prometheus.BuildFQName(namespace, "", "up"),
+			"Whether the last fetch of statistics from the modem succeeded",
+			[]string{},
 			nil,
 		),
 		fetchtime: prometheus.NewDesc(

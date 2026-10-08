@@ -112,7 +112,7 @@ func (sagemClient *sagemClient) apiRequest(actions string) ([]byte, error) {
 	jsonPayload := []byte(fmt.Sprintf("req=%s", payloadObj.String()))
 
 	req, _ := http.NewRequest("POST", APIAddress, bytes.NewBuffer(jsonPayload))
-	client := &http.Client{}
+	client := &http.Client{Timeout: utils.HTTPTimeout}
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err

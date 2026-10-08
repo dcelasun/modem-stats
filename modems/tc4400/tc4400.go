@@ -45,7 +45,7 @@ func (tc4400 *Modem) getStats() ([]byte, error) {
 
 		timeStart := time.Now().UnixNano() / int64(time.Millisecond)
 
-		client := &http.Client{}
+		client := &http.Client{Timeout: utils.HTTPTimeout}
 		resp, err := client.Do(req)
 		if err != nil {
 			return nil, err

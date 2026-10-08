@@ -17,12 +17,19 @@ import (
 	"github.com/Jeffail/gabs/v2"
 )
 
+// HTTPTimeout bounds every request to the modem. It must stay below the Prometheus
+// scrape timeout (10s by default), otherwise a hung modem API makes the whole scrape
+// time out instead of reporting modemstats_up 0.
+const HTTPTimeout = 5 * time.Second
+
 func SimpleHTTPFetch(url string) ([]byte, int64, error) {
 	timeStart := time.Now().UnixNano() / int64(time.Millisecond)
-	resp, err := http.Get(url)
+	client := &http.Client{Timeout: HTTPTimeout}
+	resp, err := client.Get(url)
 	if err != nil {
 		return nil, 0, err
 	}
+	defer resp.Body.Close()
 	if resp.StatusCode != 200 {
 		return nil, 0, fmt.Errorf("%d status code recieved", resp.StatusCode)
 	}
@@ -92,7 +99,7 @@ func BoundedParallelGet(urls []string, concurrencyLimit int, httpClient *http.Cl
 		close(resultsChan)
 	}()
 
-	client := http.DefaultClient
+	client := &http.Client{Timeout: HTTPTimeout}
 	if httpClient != nil {
 		client = httpClient
 	}
@@ -100,11 +107,13 @@ func BoundedParallelGet(urls []string, concurrencyLimit int, httpClient *http.Cl
 	for i, url := range urls {
 		go func(i int, url string) {
 			semaphoreChan <- struct{}{}
+			result := &HttpResult{Index: i}
 			res, err := client.Get(url)
 			if err != nil {
-				panic(err)
+				result.Err = err
+			} else {
+				result.Res = *res
 			}
-			result := &HttpResult{i, *res, err}
 			resultsChan <- result
 			<-semaphoreChan
 		}(i, url)
@@ -195,6 +204,7 @@ func GetHTTPClientWithCertificates(trustedCertificatesPEM ...[]byte) (*http.Clie
 	}
 
 	return &http.Client{
+		Timeout: HTTPTimeout,
 		Transport: &http.Transport{
 			TLSClientConfig: tlsConfig,
 		},

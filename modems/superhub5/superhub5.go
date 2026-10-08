@@ -120,7 +120,19 @@ func (sh5 *Modem) ParseStats() (utils.ModemStats, error) {
 		sh5.FetchTime = (time.Now().UnixNano() / int64(time.Millisecond)) - timeStart
 
 		for _, query := range statsData {
+			if query.Err != nil {
+				for _, q := range statsData {
+					if q.Err == nil {
+						q.Res.Body.Close()
+					}
+				}
+				return utils.ModemStats{}, query.Err
+			}
+		}
+
+		for _, query := range statsData {
 			stats, err := ioutil.ReadAll(query.Res.Body)
+			query.Res.Body.Close()
 			if err != nil {
 				return utils.ModemStats{}, err
 			}
