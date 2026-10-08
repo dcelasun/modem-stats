@@ -18,9 +18,10 @@ import (
 )
 
 // HTTPTimeout bounds every request to the modem. It must stay below the Prometheus
-// scrape timeout (10s by default), otherwise a hung modem API makes the whole scrape
-// time out instead of reporting modemstats_up 0.
-const HTTPTimeout = 5 * time.Second
+// scrape timeout, otherwise a hung modem API makes the whole scrape time out instead
+// of reporting modemstats_up 0. A healthy Hub 5 routinely takes 6-10s to answer, so
+// this is deliberately generous; raise the scrape timeout (e.g. 30s) to match.
+const HTTPTimeout = 20 * time.Second
 
 func SimpleHTTPFetch(url string) ([]byte, int64, error) {
 	timeStart := time.Now().UnixNano() / int64(time.Millisecond)
